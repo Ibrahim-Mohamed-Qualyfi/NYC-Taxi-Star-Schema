@@ -1,0 +1,315 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "factoryName": {
+            "type": "string",
+            "metadata": "Data Factory name",
+            "defaultValue": "data-cohort-adf"
+        },
+        "datacohortworkspacelabs_accountKey": {
+            "type": "secureString",
+            "metadata": "Secure string for 'accountKey' of 'datacohortworkspacelabs'"
+        },
+        "AzureDatabricks2_accessToken": {
+            "type": "secureString",
+            "metadata": "Secure string for 'accessToken' of 'AzureDatabricks2'"
+        },
+        "datacohortworkspacelabs_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "https://datacohortworkspacelabs.dfs.core.windows.net/"
+        },
+        "AzureDatabricks2_properties_typeProperties_existingClusterId": {
+            "type": "string",
+            "defaultValue": "1026-091752-e8tw7e6i"
+        }
+    },
+    "variables": {
+        "factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+    },
+    "resources": [
+        {
+            "name": "[concat(parameters('factoryName'), '/Landing_data')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "datacohortworkspacelabs",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "DelimitedText",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileSystem": "landing-ibrahim"
+                    },
+                    "columnDelimiter": ",",
+                    "escapeChar": "\\",
+                    "firstRowAsHeader": true,
+                    "quoteChar": "\""
+                },
+                "schema": []
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/datacohortworkspacelabs')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/Source_data')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "datacohortworkspacelabs",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "DelimitedText",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileSystem": "source"
+                    },
+                    "columnDelimiter": ",",
+                    "escapeChar": "\\",
+                    "firstRowAsHeader": true,
+                    "quoteChar": "\""
+                },
+                "schema": []
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/datacohortworkspacelabs')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/pipeline_ibrahim')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "Copy to Landing",
+                        "description": "Copy the 132 data files from source to landing container.",
+                        "type": "Copy",
+                        "dependsOn": [
+                            {
+                                "activity": "Reset",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "DelimitedTextSource",
+                                "storeSettings": {
+                                    "type": "AzureBlobFSReadSettings",
+                                    "recursive": true,
+                                    "wildcardFileName": "*",
+                                    "enablePartitionDiscovery": false
+                                },
+                                "formatSettings": {
+                                    "type": "DelimitedTextReadSettings"
+                                }
+                            },
+                            "sink": {
+                                "type": "DelimitedTextSink",
+                                "storeSettings": {
+                                    "type": "AzureBlobFSWriteSettings",
+                                    "copyBehavior": "PreserveHierarchy"
+                                },
+                                "formatSettings": {
+                                    "type": "DelimitedTextWriteSettings",
+                                    "quoteAllText": true,
+                                    "fileExtension": "*.csv.gz"
+                                }
+                            },
+                            "enableStaging": false,
+                            "translator": {
+                                "type": "TabularTranslator",
+                                "typeConversion": true,
+                                "typeConversionSettings": {
+                                    "allowDataTruncation": true,
+                                    "treatBooleanAsNumber": false
+                                }
+                            }
+                        },
+                        "inputs": [
+                            {
+                                "referenceName": "Source_data",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "referenceName": "Landing_data",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Landing to Bronze",
+                        "description": "Move the data to the bronze container.",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "Copy to Landing",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/ibrahim.mohamed@qualyfi.co.uk/Bronze"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "AzureDatabricks2",
+                            "type": "LinkedServiceReference"
+                        }
+                    },
+                    {
+                        "name": "Bronze to Silver",
+                        "description": "Move the data to the silver container.",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "Landing to Bronze",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/ibrahim.mohamed@qualyfi.co.uk/Silver"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "AzureDatabricks2",
+                            "type": "LinkedServiceReference"
+                        }
+                    },
+                    {
+                        "name": "Silver to Gold",
+                        "description": "Move the data to the gold container.",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "Bronze to Silver",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/ibrahim.mohamed@qualyfi.co.uk/Gold"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "AzureDatabricks2",
+                            "type": "LinkedServiceReference"
+                        }
+                    },
+                    {
+                        "name": "Reset",
+                        "description": "Clear all containers for new run.",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/ibrahim.mohamed@qualyfi.co.uk/Reset"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "AzureDatabricks2",
+                            "type": "LinkedServiceReference"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {}
+                },
+                "annotations": [],
+                "lastPublishTime": "2023-11-01T09:49:45Z"
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/Source_data')]",
+                "[concat(variables('factoryId'), '/datasets/Landing_data')]",
+                "[concat(variables('factoryId'), '/linkedServices/AzureDatabricks2')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/datacohortworkspacelabs')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureBlobFS",
+                "typeProperties": {
+                    "url": "[parameters('datacohortworkspacelabs_properties_typeProperties_url')]",
+                    "accountKey": {
+                        "type": "SecureString",
+                        "value": "[parameters('datacohortworkspacelabs_accountKey')]"
+                    }
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/AzureDatabricks2')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureDatabricks",
+                "typeProperties": {
+                    "domain": "https://adb-6160595734751460.0.azuredatabricks.net",
+                    "accessToken": {
+                        "type": "SecureString",
+                        "value": "[parameters('AzureDatabricks2_accessToken')]"
+                    },
+                    "existingClusterId": "[parameters('AzureDatabricks2_properties_typeProperties_existingClusterId')]"
+                }
+            },
+            "dependsOn": []
+        }
+    ]
+}

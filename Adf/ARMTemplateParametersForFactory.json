@@ -1,0 +1,21 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "factoryName": {
+            "value": "data-cohort-adf"
+        },
+        "datacohortworkspacelabs_accountKey": {
+            "value": ""
+        },
+        "AzureDatabricks2_accessToken": {
+            "value": ""
+        },
+        "datacohortworkspacelabs_properties_typeProperties_url": {
+            "value": "https://datacohortworkspacelabs.dfs.core.windows.net/"
+        },
+        "AzureDatabricks2_properties_typeProperties_existingClusterId": {
+            "value": "1026-091752-e8tw7e6i"
+        }
+    }
+}
