@@ -1,7 +1,8 @@
-# Qualyfi-Assessment-for-Data-Track
+# NYC Taxi Star Schema
 
 [Introduction](#introduction) --
 [Design](#designing-the-schema) --
+[Infrastructure](#infrastructure-setup) -- 
 [Data Engineering](#data-engineering-with-adf--databricks) -- 
 
 ## Introduction
@@ -9,6 +10,7 @@ This project consists of designing a Star Schema for the New York taxi dataset t
 
 ## Designing the Schema
 
+Created three different database designs; conceptual, logical, physical to model the structures, form, and relationships of information. The conceptual database design consisted of only the entities and relationships. The logical database design consisted of the entities, relationships, and attributes. The physical database design consisted of the entities, relationships, named attributes, keys, data types, and null values.
    <details>
    <summary>Conceptual Database Design</summary>
 
@@ -45,6 +47,11 @@ This project consists of designing a Star Schema for the New York taxi dataset t
    
    </details>
 
+## Infrastructure Setup
+
+Used terraform to set up the storage containers (landing, bronze, silver, gold) in the Azure storage account. A terraform script was created using VSCode and can be viewed in the infrastructure.tf file.
+
+
 ## Data Engineering With ADF & Databricks
 Created a pipeline showing a copy data activity and 4 Databricks notebook using Azure Data Factory.
 
@@ -55,9 +62,9 @@ Created a pipeline showing a copy data activity and 4 Databricks notebook using 
 
 - Removes any files within the landing, bronze, silver and gold container.
 
-**Copy data activity (CopyToLanding)**
+**Copy data activity (Copy to Landing)**
 
-- Moved data from source container to the landing container using the copy data tool in ADF. Use the LinkedService to connect ADF to the Azure storage blob.
+- Moved data from source container to the landing container using the copy data tool in ADF. Use the LinkedService to connect ADF to the Azure Data Lake Storage Gen2 account.
 
 **Notebook 2 (Bronze)**
 
