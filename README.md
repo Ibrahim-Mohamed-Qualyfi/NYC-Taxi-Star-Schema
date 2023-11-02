@@ -5,6 +5,13 @@
 [Infrastructure](#infrastructure-setup) -- 
 [Data Engineering](#data-engineering-with-adf--databricks) -- 
 
+### Built with:
+![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white)
+![Databricks](https://img.shields.io/badge/databricks-%23000000.svg?style=for-the-badge&logo=databricks&logoColor=white)
+![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Apache Spark](https://img.shields.io/badge/apache%20spark-%23FDEE21.svg?style=for-the-badge&logo=apachespark&logoColor=black)
+
 ## Introduction
 This project consists of designing a Star Schema for the New York taxi dataset that involves a multi-step process. First, ingest the data into a staging area, referred to as the "bronze" layer, without imposing a predefined schema. Next, process and refine the incoming data to adhere to a specified schema, creating the "silver" layer. Finally, organize the data into a Star Schema format where the Facts and Dimensions are distinctly separated, facilitating seamless reporting through tools like Power BI.
 
